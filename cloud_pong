@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cloud Pong ☁️</title>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: #87CEEB;
+        font-family: Arial, sans-serif;
+    }
+
+    canvas {
+        display: block;
+        margin: auto;
+        background: linear-gradient(#87CEEB, #bde9ff);
+    }
+
+    #score {
+        position: absolute;
+        top: 20px;
+        width: 100%;
+        text-align: center;
+        font-size: 40px;
+        color: #191970;
+        font-weight: bold;
+    }
+
+    #instructions {
+        position: absolute;
+        bottom: 15px;
+        width: 100%;
+        text-align: center;
+        color: #191970;
+        font-size: 16px;
+    }
+</style>
+</head>
+<body>
+
+<div id="score">0 : 0</div>
+<div id="instructions">W/S = Left Cloud | ↑/↓ = Right Cloud</div>
+<canvas id="gameCanvas" width="900" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const WIDTH = canvas.width;
+const HEIGHT = canvas.height;
+
+const paddleWidth = 120;
+const paddleHeight = 60;
+const paddleSpeed = 7;
+
+const ballRadius = 12;
+
+let leftScore = 0;
+let rightScore = 0;
+
+const keys = {};
+
+// Paddle objects
+const leftPaddle = {
+    x: 50,
+    y: HEIGHT / 2 - paddleHeight / 2
+};
+
+const rightPaddle = {
+    x: WIDTH - 50 - paddleWidth,
+    y: HEIGHT / 2 - paddleHeight / 2
+};
+
+// Ball object
+const ball = {
+    x: WIDTH / 2,
+    y: HEIGHT / 2,
+    vx: 5 * (Math.random() > 0.5 ? 1 : -1),
+    vy: 5 * (Math.random() > 0.5 ? 1 : -1)
+};
+
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+function drawCloud(x, y, width, height) {
+    const puffRadius = height / 3;
+
+    ctx.fillStyle = "white";
+
+    const puffs = [
+        [x + puffRadius, y + puffRadius],
+        [x + puffRadius * 2, y + puffRadius / 2],
+        [x + puffRadius * 3, y + puffRadius],
+        [x + puffRadius * 2, y + puffRadius * 1.5]
+    ];
+
+    puffs.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p[0], p[1], puffRadius, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    ctx.fillRect(x + puffRadius, y + puffRadius, width - puffRadius * 2, height / 2);
+}
+
+function drawBall() {
+    ctx.fillStyle = "#191970";
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function movePaddles() {
+    if (keys["w"]) leftPaddle.y -= paddleSpeed;
+    if (keys["s"]) leftPaddle.y += paddleSpeed;
+    if (keys["ArrowUp"]) rightPaddle.y -= paddleSpeed;
+    if (keys["ArrowDown"]) rightPaddle.y += paddleSpeed;
+
+    leftPaddle.y = Math.max(0, Math.min(HEIGHT - paddleHeight, leftPaddle.y));
+    rightPaddle.y = Math.max(0, Math.min(HEIGHT - paddleHeight, rightPaddle.y));
+}
+
+function moveBall() {
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    if (ball.y - ballRadius <= 0 || ball.y + ballRadius >= HEIGHT) {
+        ball.vy *= -1;
+    }
+
+    // Left paddle collision
+    if (
+        ball.x - ballRadius < leftPaddle.x + paddleWidth &&
+        ball.y > leftPaddle.y &&
+        ball.y < leftPaddle.y + paddleHeight &&
+        ball.vx < 0
+    ) {
+        ball.vx *= -1;
+    }
+
+    // Right paddle collision
+    if (
+        ball.x + ballRadius > rightPaddle.x &&
+        ball.y > rightPaddle.y &&
+        ball.y < rightPaddle.y + paddleHeight &&
+        ball.vx > 0
+    ) {
+        ball.vx *= -1;
+    }
+
+    // Scoring
+    if (ball.x < 0) {
+        rightScore++;
+        resetBall();
+    }
+
+    if (ball.x > WIDTH) {
+        leftScore++;
+        resetBall();
+    }
+}
+
+function resetBall() {
+    ball.x = WIDTH / 2;
+    ball.y = HEIGHT / 2;
+    ball.vx = 5 * (Math.random() > 0.5 ? 1 : -1);
+    ball.vy = 5 * (Math.random() > 0.5 ? 1 : -1);
+}
+
+function updateScore() {
+    document.getElementById("score").innerText = leftScore + " : " + rightScore;
+}
+
+function gameLoop() {
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+    movePaddles();
+    moveBall();
+    updateScore();
+
+    drawCloud(leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight);
+    drawCloud(rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight);
+    drawBall();
+
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
